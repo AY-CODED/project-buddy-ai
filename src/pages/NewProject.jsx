@@ -234,7 +234,7 @@ const NewProject = () => {
                 {isGenerating ? (
                   <>
                     <Loader2 className="animate-spin mr-2" size={20} />
-                    Asking Cohere...
+                    Generating Word...
                   </>
                 ) : (
                   <>

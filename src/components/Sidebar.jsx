@@ -14,7 +14,7 @@ const Sidebar = ({ isOpen, onClose }) => {
     const location = useLocation();
 
     const menuItems = [
-        { name: "Projects", icon: <LayoutGrid size={20} />, path: "/" },
+        { name: "Projects", icon: <LayoutGrid size={20} />, path: "/active-projects" },
         // { name: "Memory", icon: <BrainCircuit size={20} />, path: "/memory" },
         // { name: "Templates", icon: <FileText size={20} />, path: "/templates" },
         // { name: "Marketplace", icon: <ShoppingBag size={20} />, path: "/marketplace" },

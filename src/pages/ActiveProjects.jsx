@@ -10,7 +10,8 @@ import {
 } from 'lucide-react';
 
 const ActiveProjects = () => {
-  const { projects } = useOutletContext(); 
+  // Fix: Handle null context if useOutletContext returns null
+  const { projects } = useOutletContext() || {}; 
 
   const [activeTab, setActiveTab] = useState('All Projects');
 
