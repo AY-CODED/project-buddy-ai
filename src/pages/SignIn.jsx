@@ -1,14 +1,21 @@
-
 import React from 'react'
 import Doc2 from '../assets/Doc.gif'
 import { FcGoogle } from 'react-icons/fc';
 import { FaFacebook } from 'react-icons/fa';
-import { Link } from 'react-router';
+import { Link, useNavigate } from 'react-router-dom';
 import ActiveProjects from './ActiveProjects';
 import SignUp from './SignUp';
-const SignIn = () => {
-  return (
 
+const SignIn = () => {
+  const navigate = useNavigate();
+
+  const handleSubmit = (e) => {
+    e.preventDefault(); // Prevents page reload
+    // Navigation happens only if browser validation (required fields) passes
+    navigate('/active-projects');
+  };
+
+  return (
     <section className='min-h-screen bg-gray-50 flex items-center justify-center p-4 sm:p-6 lg:p-10'>
       <div className='bg-white shadow-xl rounded-lg flex flex-col lg:flex-row max-w-5xl w-full overflow-hidden'>
 
@@ -40,25 +47,21 @@ const SignIn = () => {
 
             {/* --- 🌟 SOCIAL SIGN-IN BUTTONS START HERE 🌟 --- */}
             <div className='space-y-4 mb-8'>
-
-              {/* Google Sign-In Button */}
               <button
+                type="button"
                 className='w-full flex items-center justify-center px-5 py-3 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-100 transition duration-300'
               >
-                {/* Placeholder for Google Icon */}
                 <FcGoogle className="w-5 h-5 mr-3" />
                 Sign in with Google
               </button>
 
-              {/* Facebook Sign-In Button */}
               <button
+                type="button"
                 className='w-full flex items-center justify-center px-5 py-3 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition duration-300'
               >
-                {/* Placeholder for Facebook Icon */}
                 <FaFacebook className="w-5 h-5 mr-3 text-white" />
                 Sign in with Facebook
               </button>
-
             </div>
 
             {/* Divider */}
@@ -67,13 +70,12 @@ const SignIn = () => {
               <span className="flex-shrink mx-4 text-gray-500">OR</span>
               <div className="flex-grow border-t border-gray-300"></div>
             </div>
-            {/* --- 🌟 SOCIAL SIGN-IN BUTTONS END HERE 🌟 --- */}
 
-
-            {/* Placeholder for standard Email/Password Sign-In Form */}
-            <form className='space-y-6'>
+            {/* --- FORM WITH VALIDATION --- */}
+            <form className='space-y-6' onSubmit={handleSubmit}>
               <div>
                 <input
+                  required
                   type='email'
                   placeholder='Email Address'
                   className='w-full px-5 py-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-500'
@@ -81,22 +83,25 @@ const SignIn = () => {
               </div>
               <div>
                 <input
+                  required
                   type='password'
                   placeholder='Password'
                   className='w-full px-5 py-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-500'
                 />
               </div>
+              
+              {/* Changed from Link to Button to trigger form validation */}
               <button
-                // type='submit'
+                type='submit'
                 className='w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition duration-300 ease-in-out font-semibold text-lg'
               >
-                <Link to="/active-projects">Sign In</Link>
+                Sign In
               </button>
+
               <p className='mt-4 text-sm text-gray-500'>
                 Don't have an account? <Link to='/active-projects' className='text-blue-600 hover:underline'>Sign Up</Link>
               </p>
             </form>
-            {/* End Placeholder */}
           </div>
         </div>
 
