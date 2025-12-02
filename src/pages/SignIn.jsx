@@ -3,8 +3,6 @@ import Doc2 from '../assets/Doc.gif'
 import { FcGoogle } from 'react-icons/fc';
 import { FaFacebook } from 'react-icons/fa';
 import { Link, useNavigate } from 'react-router-dom';
-import ActiveProjects from './ActiveProjects';
-import SignUp from './SignUp';
 
 const SignIn = () => {
   const navigate = useNavigate();
@@ -90,7 +88,6 @@ const SignIn = () => {
                 />
               </div>
               
-              {/* Changed from Link to Button to trigger form validation */}
               <button
                 type='submit'
                 className='w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition duration-300 ease-in-out font-semibold text-lg'
@@ -99,7 +96,7 @@ const SignIn = () => {
               </button>
 
               <p className='mt-4 text-sm text-gray-500'>
-                Don't have an account? <Link to='/active-projects' className='text-blue-600 hover:underline'>Sign Up</Link>
+                Don't have an account? <Link to='/signup' className='text-blue-600 hover:underline'>Sign Up</Link>
               </p>
             </form>
           </div>
