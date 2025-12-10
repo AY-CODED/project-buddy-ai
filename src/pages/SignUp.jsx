@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Doc2 from '../assets/Doc.gif';
 import { FcGoogle } from 'react-icons/fc';
 import { FaFacebook } from 'react-icons/fa';
@@ -7,10 +7,35 @@ import { Link, useNavigate } from 'react-router-dom';
 const SignUp = () => {
   const navigate = useNavigate();
 
+  // State to capture input values
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Navigate to Sign In or Dashboard after successful validation
-    navigate('/');
+
+    // 1. Logic to split "Full Name" into First/Last for the profile page
+    const nameParts = fullName.trim().split(' ');
+    const firstName = nameParts[0];
+    const lastName = nameParts.slice(1).join(' ') || '';
+
+    // 2. Gather the data
+    const userData = {
+        firstName: firstName,
+        lastName: lastName,
+        email: email,
+        // Initialize others as empty so they exist in Profile
+        phone: '', 
+        location: '', 
+        bio: ''
+    };
+
+    // 3. Save to Local Storage
+    localStorage.setItem('currentUser', JSON.stringify(userData));
+
+    // 4. Navigate to dashboard (Active Projects)
+    navigate('/active-projects');
   };
 
   return (
@@ -76,6 +101,8 @@ const SignUp = () => {
                   required
                   type='text'
                   placeholder='Full Name'
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
                   className='w-full px-5 py-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-500'
                 />
               </div>
@@ -84,6 +111,8 @@ const SignUp = () => {
                   required
                   type='email'
                   placeholder='Email Address'
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   className='w-full px-5 py-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-500'
                 />
               </div>
@@ -92,6 +121,8 @@ const SignUp = () => {
                   required
                   type='password'
                   placeholder='Password'
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   className='w-full px-5 py-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-500'
                 />
               </div>

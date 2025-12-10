@@ -88,7 +88,7 @@ const ProjectResult = () => {
                 onClick={() => window.print()}
                 className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 shadow-md transition-all font-medium text-xs md:text-sm"
             >
-                <Printer size={16} /> Save as PDF
+                <Printer size={16} /> Print
             </button>
         </div>
       </div>

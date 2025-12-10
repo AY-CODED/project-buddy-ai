@@ -7,7 +7,7 @@ import {
     ShoppingBag,
     User,
     LogOut,
-    X // Import X icon for closing
+    X
 } from 'lucide-react';
 
 const Sidebar = ({ isOpen, onClose }) => {
@@ -51,7 +51,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                         <Link
                             key={index}
                             to={item.path}
-                            onClick={onClose} // Close sidebar on mobile when link clicked
+                            onClick={onClose}
                             className={`flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition-all font-medium group
                             ${isActive
                                 ? "bg-blue-50 text-blue-600"
@@ -68,12 +68,27 @@ const Sidebar = ({ isOpen, onClose }) => {
 
             {/* Bottom User Section */}
             <div className="mt-auto pt-6 border-t border-gray-100">
-                <div className="flex items-center gap-3 hover:bg-gray-50 p-2 rounded-lg cursor-pointer transition-colors">
-                    <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden flex-shrink-0">
-                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" alt="User" />
-                    </div>
-                    <div className="text-sm font-medium text-gray-700 truncate">My Account</div>
-                    <LogOut size={16} className="ml-auto text-gray-400 hover:text-red-500 flex-shrink-0" />
+                <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors">
+                    {/* Click Account info to go to Profile */}
+                    <Link 
+                        to="/profile" 
+                        onClick={onClose}
+                        className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer"
+                    >
+                        <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden flex-shrink-0">
+                            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" alt="User" />
+                        </div>
+                        <div className="text-sm font-medium text-gray-700 truncate">My Account</div>
+                    </Link>
+                    
+                    {/* Click Icon to Logout (Go to Sign In) */}
+                    <Link 
+                        to="/" 
+                        className="text-gray-400 hover:text-red-500 p-1 rounded hover:bg-gray-100 transition-colors"
+                        title="Log Out"
+                    >
+                        <LogOut size={16} />
+                    </Link>
                 </div>
             </div>
         </aside>

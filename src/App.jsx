@@ -11,6 +11,8 @@ import ProjectsPage from './pages/ProjectsPage';
 import ProjectResult from './pages/ProjectResult';
 import SignIn from './pages/SignIn';
 import SignUp from './pages/SignUp';
+import ProfilePage from './pages/ProfilePage';
+
 const App = () => {
   return (
     <BrowserRouter>
@@ -21,7 +23,7 @@ const App = () => {
           <Route path='/active-projects' element={<ActiveProjects />} />
           <Route path="marketplace" element={<Marketplace />} />
           <Route path="memory" element={<Memory />} />
-          <Route path="profile" element={<div className="text-2xl">Profile Page Content</div>} />
+          <Route path="profile" element={<ProfilePage />} />
           <Route path='/new-project' element={<NewProject />} />
           <Route path='templates' element={<Templates />} />
           <Route path='/projects-page' element={<ProjectsPage />} />
