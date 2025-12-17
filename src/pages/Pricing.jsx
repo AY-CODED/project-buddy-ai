@@ -158,16 +158,7 @@ const Pricing = () => {
             </div>
 
             {/* Trust Footer */}
-            <div className="mt-20 text-center pb-10">
-                <p className="text-gray-400 text-sm font-medium mb-4">TRUSTED BY INNOVATORS AT</p>
-                <div className="flex justify-center gap-8 grayscale opacity-50">
-                    {/* Placeholder Company Logos (using text for simplicity) */}
-                    <span className="font-bold text-xl text-gray-600">ACME Corp</span>
-                    <span className="font-bold text-xl text-gray-600">GlobalTech</span>
-                    <span className="font-bold text-xl text-gray-600">Nebula</span>
-                    <span className="font-bold text-xl text-gray-600">Vertex</span>
-                </div>
-            </div>
+           
         </div>
     );
 };
