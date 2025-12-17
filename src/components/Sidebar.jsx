@@ -7,7 +7,8 @@ import {
     ShoppingBag,
     User,
     LogOut,
-    X
+    X,
+    CreditCard // Added CreditCard icon
 } from 'lucide-react';
 
 const Sidebar = ({ isOpen, onClose }) => {
@@ -18,6 +19,7 @@ const Sidebar = ({ isOpen, onClose }) => {
         // { name: "Memory", icon: <BrainCircuit size={20} />, path: "/memory" },
         // { name: "Templates", icon: <FileText size={20} />, path: "/templates" },
         // { name: "Marketplace", icon: <ShoppingBag size={20} />, path: "/marketplace" },
+        { name: "Pricing", icon: <CreditCard size={20} />, path: "/pricing" }, // Added Pricing button
         { name: "Profile", icon: <User size={20} />, path: "/profile" },
     ];
 

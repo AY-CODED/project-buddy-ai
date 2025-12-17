@@ -12,6 +12,7 @@ import ProjectResult from './pages/ProjectResult';
 import SignIn from './pages/SignIn';
 import SignUp from './pages/SignUp';
 import ProfilePage from './pages/ProfilePage';
+import Pricing from './pages/Pricing';
 
 const App = () => {
   return (
@@ -28,6 +29,7 @@ const App = () => {
           <Route path='templates' element={<Templates />} />
           <Route path='/projects-page' element={<ProjectsPage />} />
           <Route path="/project-result" element={<ProjectResult />} />
+          <Route path="/pricing" element={<Pricing/>}/>
         </Route>
       </Routes>
     </BrowserRouter>
