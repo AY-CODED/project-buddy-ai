@@ -44,7 +44,7 @@ const SignIn = () => {
             </p>
 
             {/* --- 🌟 SOCIAL SIGN-IN BUTTONS START HERE 🌟 --- */}
-            <div className='space-y-4 mb-8'>
+            {/* <div className='space-y-4 mb-8'>
               <button
                 type="button"
                 className='w-full flex items-center justify-center px-5 py-3 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-100 transition duration-300'
@@ -63,11 +63,11 @@ const SignIn = () => {
             </div>
 
             {/* Divider */}
-            <div className="relative flex py-5 items-center">
+            {/* <div className="relative flex py-5 items-center">
               <div className="flex-grow border-t border-gray-300"></div>
               <span className="flex-shrink mx-4 text-gray-500">OR</span>
               <div className="flex-grow border-t border-gray-300"></div>
-            </div>
+            </div>  */}
 
             {/* --- FORM WITH VALIDATION --- */}
             <form className='space-y-6' onSubmit={handleSubmit}>

@@ -69,7 +69,7 @@ const SignUp = () => {
             </p>
 
             {/* --- SOCIAL BUTTONS --- */}
-            <div className='space-y-4 mb-8'>
+            {/* <div className='space-y-4 mb-8'>
               <button
                 type="button"
                 className='w-full flex items-center justify-center px-5 py-3 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-100 transition duration-300'
@@ -85,14 +85,14 @@ const SignUp = () => {
                 <FaFacebook className="w-5 h-5 mr-3 text-white" />
                 Sign up with Facebook
               </button>
-            </div>
+            </div> */}
 
             {/* Divider */}
-            <div className="relative flex py-5 items-center">
+            {/* <div className="relative flex py-5 items-center">
               <div className="flex-grow border-t border-gray-300"></div>
               <span className="flex-shrink mx-4 text-gray-500">OR</span>
               <div className="flex-grow border-t border-gray-300"></div>
-            </div>
+            </div> */}
 
             {/* --- FORM --- */}
             <form className='space-y-5' onSubmit={handleSubmit}>
