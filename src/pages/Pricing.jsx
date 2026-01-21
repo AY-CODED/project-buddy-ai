@@ -22,7 +22,7 @@ const Pricing = () => {
         },
         {
             name: "Plus",
-            price: isAnnual ? "2,500" : "5,000",
+            price: isAnnual ? "250" : "25",
             description: "For creators who need more power.",
             icon: <Shield className="w-6 h-6 text-blue-500" />,
             popular: true,
@@ -39,7 +39,7 @@ const Pricing = () => {
         },
         {
             name: "Pro",
-            price: isAnnual ? "5,000" : "10,000",
+            price: isAnnual ? "500" : "50",
             description: "Ultimate power for professionals.",
             icon: <Crown className="w-6 h-6 text-purple-500" />,
             features: [
@@ -112,7 +112,7 @@ const Pricing = () => {
                         {/* Price */}
                         <div className="mb-8">
                             <div className="flex items-baseline">
-                                <span className="text-4xl font-extrabold text-gray-900">₦{plan.price}</span>
+                                <span className="text-4xl font-extrabold text-gray-900">${plan.price}</span>
                                 <span className="text-gray-500 ml-2">/mo</span>
                             </div>
                             {isAnnual && plan.price !== "0" && (
@@ -156,9 +156,6 @@ const Pricing = () => {
                     </div>
                 ))}
             </div>
-
-            {/* Trust Footer */}
-           
         </div>
     );
 };
