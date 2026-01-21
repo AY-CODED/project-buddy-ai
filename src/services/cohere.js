@@ -1,4 +1,6 @@
-const COHERE_API_KEY = import.meta.env.VITE_COHERE_API_KEY;
+// ⚠️ SECURITY WARNING: This key is hardcoded for ease of use.
+// In a production app, use environment variables (import.meta.env.VITE_COHERE_API_KEY).
+const COHERE_API_KEY = 'N2mvsti4PTxo1MWiPAySpIJVk1oTKTLJ3CGfzFZN';
 
 export const generateWithCohere = async (title, description) => {
   const url = 'https://api.cohere.ai/v1/chat';
@@ -21,10 +23,6 @@ export const generateWithCohere = async (title, description) => {
   `;
 
   try {
-    if (!COHERE_API_KEY) {
-        throw new Error('Cohere API Key is missing. Please check your .env file.');
-    }
-
     const response = await fetch(url, {
       method: 'POST',
       headers: {
