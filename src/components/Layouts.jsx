@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import Navbar from "./Navbar";
 import Sidebar from "./Sidebar";
@@ -8,9 +8,14 @@ const Layouts = () => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
     // Lift State Here
-    const [projects, setProjects] = useState([
-        // { id: 1, title: "Marketing Campaign Q4", category: "Business", tags: ["Marketing"], progress: 75, status: "In Progress", lastEdited: "2 hours ago", deadline: "2023-12-01" },
-    ]);
+    const [projects, setProjects] = useState(() => {
+        const savedProjects = localStorage.getItem('projects');
+        return savedProjects ? JSON.parse(savedProjects) : [];
+    });
+
+    useEffect(() => {
+        localStorage.setItem('projects', JSON.stringify(projects));
+    }, [projects]);
 
     const addProject = (newProjectData) => {
         const now = new Date();
