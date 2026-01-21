@@ -3,21 +3,32 @@ import Doc2 from '../assets/Doc.gif'
 // import { FcGoogle } from 'react-icons/fc';
 // import { FaFacebook } from 'react-icons/fa';
 import { Link, useNavigate } from 'react-router-dom';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertCircle } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 const SignIn = () => {
   const navigate = useNavigate();
+  const { login } = useAuth();
+
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSubmit = (e) => {
-    e.preventDefault(); // Prevents page reload
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     setIsLoading(true);
+    setError('');
 
-    // Simulate API call
-    setTimeout(() => {
-        setIsLoading(false);
+    try {
+        await login(email, password);
         navigate('/active-projects');
-    }, 1500);
+    } catch (err) {
+        console.error(err);
+        setError('Failed to sign in. Please check your credentials.');
+    } finally {
+        setIsLoading(false);
+    }
   };
 
   return (
@@ -50,12 +61,21 @@ const SignIn = () => {
               Sign in to continue to Project Buddy AI
             </p>
 
+            {error && (
+              <div className="mb-6 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg flex items-center text-sm text-left">
+                <AlertCircle size={18} className="mr-2 flex-shrink-0" />
+                {error}
+              </div>
+            )}
+
             <form className='space-y-6' onSubmit={handleSubmit}>
               <div>
                 <input
                   required
                   type='email'
                   placeholder='Email Address'
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   className='w-full px-5 py-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-500'
                   disabled={isLoading}
                 />
@@ -65,6 +85,8 @@ const SignIn = () => {
                   required
                   type='password'
                   placeholder='Password'
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   className='w-full px-5 py-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-500'
                   disabled={isLoading}
                 />

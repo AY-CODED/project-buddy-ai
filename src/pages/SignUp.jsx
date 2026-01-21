@@ -1,41 +1,63 @@
 import React, { useState } from 'react';
 import Doc2 from '../assets/Doc.gif';
-import { FcGoogle } from 'react-icons/fc';
-import { FaFacebook } from 'react-icons/fa';
 import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { db } from '../services/firebase';
+import { setDoc, doc } from 'firebase/firestore';
+import { Loader2, AlertCircle } from 'lucide-react';
 
 const SignUp = () => {
   const navigate = useNavigate();
+  const { signup } = useAuth();
 
   // State to capture input values
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
+    setIsLoading(true);
 
-    // 1. Logic to split "Full Name" into First/Last for the profile page
-    const nameParts = fullName.trim().split(' ');
-    const firstName = nameParts[0];
-    const lastName = nameParts.slice(1).join(' ') || '';
+    try {
+      // 1. Create User in Firebase Auth
+      const userCredential = await signup(email, password);
+      const user = userCredential.user;
 
-    // 2. Gather the data
-    const userData = {
-        firstName: firstName,
-        lastName: lastName,
-        email: email,
-        // Initialize others as empty so they exist in Profile
-        phone: '', 
-        location: '', 
-        bio: ''
-    };
+      // 2. Logic to split "Full Name" into First/Last for the profile page
+      const nameParts = fullName.trim().split(' ');
+      const firstName = nameParts[0];
+      const lastName = nameParts.slice(1).join(' ') || '';
 
-    // 3. Save to Local Storage
-    localStorage.setItem('currentUser', JSON.stringify(userData));
+      // 3. Save additional user data to Firestore
+      const userData = {
+          uid: user.uid,
+          firstName: firstName,
+          lastName: lastName,
+          email: email,
+          phone: '',
+          location: '',
+          bio: '',
+          createdAt: new Date().toISOString()
+      };
 
-    // 4. Navigate to dashboard (Active Projects)
-    navigate('/active-projects');
+      await setDoc(doc(db, 'users', user.uid), userData);
+
+      // 4. Save to Local Storage (Optional, but good for immediate synchronous access if needed before auth state propagates)
+      // Removing it to rely on Auth Context and Firestore
+
+      // 5. Navigate to dashboard (Active Projects)
+      navigate('/active-projects');
+
+    } catch (err) {
+      console.error(err);
+      setError(err.message || 'Failed to create an account.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -68,31 +90,12 @@ const SignUp = () => {
               Create a free account to continue
             </p>
 
-            {/* --- SOCIAL BUTTONS --- */}
-            {/* <div className='space-y-4 mb-8'>
-              <button
-                type="button"
-                className='w-full flex items-center justify-center px-5 py-3 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-100 transition duration-300'
-              >
-                <FcGoogle className="w-5 h-5 mr-3" />
-                Sign up with Google
-              </button>
-
-              <button
-                type="button"
-                className='w-full flex items-center justify-center px-5 py-3 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition duration-300'
-              >
-                <FaFacebook className="w-5 h-5 mr-3 text-white" />
-                Sign up with Facebook
-              </button>
-            </div> */}
-
-            {/* Divider */}
-            {/* <div className="relative flex py-5 items-center">
-              <div className="flex-grow border-t border-gray-300"></div>
-              <span className="flex-shrink mx-4 text-gray-500">OR</span>
-              <div className="flex-grow border-t border-gray-300"></div>
-            </div> */}
+            {error && (
+              <div className="mb-6 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg flex items-center text-sm text-left">
+                <AlertCircle size={18} className="mr-2 flex-shrink-0" />
+                {error}
+              </div>
+            )}
 
             {/* --- FORM --- */}
             <form className='space-y-5' onSubmit={handleSubmit}>
@@ -104,6 +107,7 @@ const SignUp = () => {
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   className='w-full px-5 py-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-500'
+                  disabled={isLoading}
                 />
               </div>
               <div>
@@ -114,6 +118,7 @@ const SignUp = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className='w-full px-5 py-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-500'
+                  disabled={isLoading}
                 />
               </div>
               <div>
@@ -124,14 +129,23 @@ const SignUp = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className='w-full px-5 py-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-500'
+                  disabled={isLoading}
                 />
               </div>
               
               <button
                 type='submit'
-                className='w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition duration-300 ease-in-out font-semibold text-lg'
+                disabled={isLoading}
+                className={`w-full flex items-center justify-center bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition duration-300 ease-in-out font-semibold text-lg ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
               >
-                Create Account
+                 {isLoading ? (
+                    <>
+                        <Loader2 className="animate-spin mr-2" size={20} />
+                        Creating Account...
+                    </>
+                ) : (
+                    "Create Account"
+                )}
               </button>
 
               <p className='mt-4 text-sm text-gray-500'>

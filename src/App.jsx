@@ -29,6 +29,7 @@ const App = () => {
           <Route path='templates' element={<Templates />} />
           <Route path='/projects-page' element={<ProjectsPage />} />
           <Route path="/project-result" element={<ProjectResult />} />
+          <Route path="/project/:id" element={<ProjectResult />} />
           <Route path="/pricing" element={<Pricing/>}/>
         </Route>
       </Routes>

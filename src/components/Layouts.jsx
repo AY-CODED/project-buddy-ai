@@ -2,22 +2,47 @@ import React, { useState, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import Navbar from "./Navbar";
 import Sidebar from "./Sidebar";
+import { useAuth } from '../context/AuthContext';
+import { db } from '../services/firebase';
+import { collection, query, where, onSnapshot, addDoc, serverTimestamp, orderBy } from 'firebase/firestore';
 
 const Layouts = () => {
     // State for Mobile Sidebar
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-    // Lift State Here
-    const [projects, setProjects] = useState(() => {
-        const savedProjects = localStorage.getItem('projects');
-        return savedProjects ? JSON.parse(savedProjects) : [];
-    });
+    const { currentUser } = useAuth();
+    const [projects, setProjects] = useState([]);
 
     useEffect(() => {
-        localStorage.setItem('projects', JSON.stringify(projects));
-    }, [projects]);
+        if (!currentUser) {
+            setProjects([]);
+            return;
+        }
 
-    const addProject = (newProjectData) => {
+        const q = query(
+            collection(db, 'projects'),
+            where('userId', '==', currentUser.uid),
+            orderBy('createdAt', 'desc')
+        );
+
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const projectsData = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+            setProjects(projectsData);
+        }, (error) => {
+             console.error("Error fetching projects: ", error);
+             // Fallback if index is missing or other error (e.g. just remove orderBy temporarily if needed, but desc sort is standard)
+             // If query fails, we might see it in console.
+        });
+
+        return () => unsubscribe();
+    }, [currentUser]);
+
+    const addProject = async (newProjectData) => {
+        if (!currentUser) return;
+
         const now = new Date();
         const formattedTime = now.toLocaleTimeString('en-US', { 
             hour: '2-digit', 
@@ -25,15 +50,28 @@ const Layouts = () => {
             hour12: true 
         });
 
+        // We don't need the client-side ID, Firestore creates one.
+        // But NewProject passes it. We can ignore it or store it as 'tempId' if we want.
+        const { id, ...projectData } = newProjectData;
+
         const newProject = {
-            id: projects.length + 1,
-            ...newProjectData,
+            ...projectData,
+            userId: currentUser.uid,
             lastEdited: "Just now", 
             timestamp: formattedTime,
+            createdAt: serverTimestamp(),
             tags: [newProjectData.category],
             type: newProjectData.category
         };
-        setProjects([newProject, ...projects]);
+
+        try {
+            const docRef = await addDoc(collection(db, 'projects'), newProject);
+            // Return the new project with the real ID
+            return { id: docRef.id, ...newProject };
+        } catch (error) {
+            console.error("Error adding project: ", error);
+            throw error;
+        }
     };
 
     return (
