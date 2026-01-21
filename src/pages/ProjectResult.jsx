@@ -155,10 +155,13 @@ const ProjectResult = () => {
       
       {/* --- TOOLBAR --- */}
       <div className="w-full md:max-w-[210mm] mx-auto mb-6 flex flex-col md:flex-row justify-between items-center gap-4 print:hidden">
-        <Link to="/" className="inline-flex items-center text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors self-start md:self-auto">
-          <ArrowLeft size={16} className="mr-2" />
-          Back to Dashboard
-        </Link>
+       <Link 
+  to="/active-projects" 
+  className="inline-flex items-center text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors self-start md:self-auto"
+>
+  <ArrowLeft size={16} className="mr-2" />
+  Back to Dashboard
+</Link>
         
         <div className="flex flex-wrap gap-3 w-full md:w-auto">
              {/* Edit / Save Buttons */}
