@@ -122,7 +122,7 @@ const ActiveProjects = () => {
 
                 {/* ✅ UPDATED LINK: Navigate to Result Page with Project Data */}
                 <Link 
-                  to="/project-result" 
+                  to={`/project/${project.id}`}
                   state={{ project: project }}
                   className="group flex items-center text-sm font-semibold text-blue-600 hover:text-blue-700 transition-colors"
                 >

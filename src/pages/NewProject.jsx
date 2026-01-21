@@ -46,10 +46,10 @@ const NewProject = () => {
       };
 
       // 3. Save to Global State (App.jsx)
-      addProject(finalProjectData);
+      const savedProject = await addProject(finalProjectData);
 
       // 4. Navigate to Result Page and show the answer
-      navigate('/project-result', { state: { project: finalProjectData } });
+      navigate('/project-result', { state: { project: savedProject } });
 
     } catch (err) {
       setError(err.message || 'Failed to generate content. Please check your internet connection.');

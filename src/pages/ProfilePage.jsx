@@ -7,12 +7,19 @@ import {
     Camera, 
     Save, 
     Shield, 
-    Bell 
+    Bell,
+    Loader2
 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { db } from '../services/firebase';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 const ProfilePage = () => {
+    const { currentUser } = useAuth();
     const [activeTab, setActiveTab] = useState('personal');
     const fileInputRef = useRef(null); // Reference for the hidden file input
+    const [isLoading, setIsLoading] = useState(true);
+    const [isSaving, setIsSaving] = useState(false);
     
     // State to hold form data including profileImage
     const [formData, setFormData] = useState({
@@ -25,17 +32,38 @@ const ProfilePage = () => {
         profileImage: '' // Added field for the image
     });
 
-    // Load data from localStorage on component mount
+    // Load data from Firestore on component mount
     useEffect(() => {
-        const savedUser = localStorage.getItem('currentUser');
-        if (savedUser) {
-            const parsedUser = JSON.parse(savedUser);
-            setFormData(prev => ({
-                ...prev,
-                ...parsedUser
-            }));
-        }
-    }, []);
+        const fetchUserData = async () => {
+            if (currentUser) {
+                try {
+                    const docRef = doc(db, 'users', currentUser.uid);
+                    const docSnap = await getDoc(docRef);
+
+                    if (docSnap.exists()) {
+                        setFormData(prev => ({
+                            ...prev,
+                            ...docSnap.data()
+                        }));
+                    } else {
+                        // If no user doc exists yet (e.g. old user), set basic info from Auth
+                        setFormData(prev => ({
+                            ...prev,
+                            email: currentUser.email,
+                        }));
+                    }
+                } catch (error) {
+                    console.error("Error fetching user data:", error);
+                } finally {
+                    setIsLoading(false);
+                }
+            } else {
+                setIsLoading(false);
+            }
+        };
+
+        fetchUserData();
+    }, [currentUser]);
 
     // Handle input changes (Text fields)
     const handleChange = (e) => {
@@ -50,6 +78,12 @@ const ProfilePage = () => {
     const handleImageChange = (e) => {
         const file = e.target.files[0];
         if (file) {
+            // Basic size check (e.g. 500KB limit for Firestore storage efficiency)
+            if (file.size > 500 * 1024) {
+                alert("Image is too large. Please choose an image under 500KB.");
+                return;
+            }
+
             const reader = new FileReader();
             reader.onloadend = () => {
                 // Save the image as a Base64 string in the state
@@ -67,16 +101,32 @@ const ProfilePage = () => {
         fileInputRef.current.click();
     };
 
-    // Save changes to localStorage
-    const handleSave = () => {
+    // Save changes to Firestore
+    const handleSave = async () => {
+        if (!currentUser) return;
+        setIsSaving(true);
         try {
-            localStorage.setItem('currentUser', JSON.stringify(formData));
+            await setDoc(doc(db, 'users', currentUser.uid), formData, { merge: true });
             alert("Profile details saved successfully!");
         } catch (error) {
-            // Catch error if image is too large for LocalStorage
-            alert("Image is too large to save locally. Please try a smaller image.");
+            console.error("Error saving profile:", error);
+            if (error.code === 'firestore/resource-exhausted') {
+                 alert("Profile data too large (likely the image). Please use a smaller image.");
+            } else {
+                 alert("Failed to save profile.");
+            }
+        } finally {
+            setIsSaving(false);
         }
     };
+
+    if (isLoading) {
+        return (
+             <div className="min-h-screen flex items-center justify-center">
+                <Loader2 className="animate-spin text-blue-600" size={40} />
+            </div>
+        );
+    }
 
     return (
         <div className="p-6 max-w-7xl mx-auto">
@@ -200,6 +250,7 @@ const ProfilePage = () => {
                                                 value={formData.email}
                                                 onChange={handleChange}
                                                 className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-600 transition-all text-gray-700"
+                                                disabled
                                             />
                                         </div>
                                     </div>
@@ -257,9 +308,10 @@ const ProfilePage = () => {
                                     <button 
                                         type="button" 
                                         onClick={handleSave}
-                                        className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors shadow-sm"
+                                        disabled={isSaving}
+                                        className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
-                                        <Save size={18} />
+                                        {isSaving ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
                                         Save Changes
                                     </button>
                                 </div>

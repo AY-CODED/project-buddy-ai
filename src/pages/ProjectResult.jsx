@@ -1,21 +1,80 @@
-import React from 'react';
-import { useLocation, Link, Navigate } from 'react-router-dom';
-import { ArrowLeft, Printer, FileText, BookOpen } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { useLocation, Link, Navigate, useParams } from 'react-router-dom';
+import { ArrowLeft, Printer, FileText, BookOpen, Edit, Save, X, Loader2 } from 'lucide-react';
+import { db } from '../services/firebase';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
 
 const ProjectResult = () => {
   const location = useLocation();
-  const project = location.state?.project;
+  const { id } = useParams();
 
-  if (!project) {
-    return <Navigate to="/" replace />;
-  }
+  // Initialize from state if available, otherwise null (will fetch)
+  const [project, setProject] = useState(location.state?.project || null);
+  const [isLoading, setIsLoading] = useState(!location.state?.project && !!id);
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
-  const formattedDate = new Date().toLocaleDateString('en-US', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
+  // Edit state
+  const [editTitle, setEditTitle] = useState('');
+  const [editContent, setEditContent] = useState('');
+
+  useEffect(() => {
+    // If we have an ID but no project data, fetch it.
+    if (id && !project) {
+        const fetchProject = async () => {
+            setIsLoading(true);
+            try {
+                const docRef = doc(db, 'projects', id);
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    setProject({ id: docSnap.id, ...data });
+                } else {
+                    console.error("No such document!");
+                }
+            } catch (error) {
+                console.error("Error fetching project:", error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchProject();
+    }
+  }, [id, project]);
+
+  // Sync edit state when project is loaded or edit mode toggled
+  useEffect(() => {
+      if (project) {
+          setEditTitle(project.title);
+          setEditContent(project.content);
+      }
+  }, [project, isEditing]);
+
+  const handleSave = async () => {
+      if (!project || !project.id) return;
+      setIsSaving(true);
+      try {
+          const docRef = doc(db, 'projects', project.id);
+          await updateDoc(docRef, {
+              title: editTitle,
+              content: editContent,
+              lastEdited: "Just now" // In a real app, use serverTimestamp() or new Date().toISOString()
+          });
+
+          setProject(prev => ({
+              ...prev,
+              title: editTitle,
+              content: editContent,
+              lastEdited: "Just now"
+          }));
+          setIsEditing(false);
+      } catch (error) {
+          console.error("Error updating project:", error);
+          alert("Failed to save changes.");
+      } finally {
+          setIsSaving(false);
+      }
+  };
 
   const handleDownloadWord = () => {
     const element = document.getElementById('project-content');
@@ -42,7 +101,7 @@ const ProjectResult = () => {
            <h1>${project.title}</h1>
            <div class="meta">
              <p><strong>Student Name:</strong> Student Name | <strong>Matric:</strong> HNG-102-44</p>
-             <p><strong>Date:</strong> ${formattedDate}</p>
+             <p><strong>Date:</strong> ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
            </div>
         </div>
         <div class="content">
@@ -66,6 +125,31 @@ const ProjectResult = () => {
     URL.revokeObjectURL(url);
   };
 
+  if (isLoading) {
+      return (
+          <div className="min-h-screen flex items-center justify-center bg-gray-200">
+              <Loader2 className="animate-spin text-blue-600" size={40} />
+          </div>
+      );
+  }
+
+  if (!project) {
+    if (!id) return <Navigate to="/" replace />;
+    return (
+        <div className="min-h-screen flex items-center justify-center bg-gray-200">
+            <p className="text-gray-600">Project not found.</p>
+             <Link to="/" className="ml-4 text-blue-600 hover:underline">Go Home</Link>
+        </div>
+    );
+  }
+
+  const formattedDate = new Date().toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+
   return (
     <div className="min-h-screen bg-gray-200 py-6 md:py-10 px-2 md:px-4 font-sans print:bg-white print:p-0">
       
@@ -77,6 +161,34 @@ const ProjectResult = () => {
         </Link>
         
         <div className="flex flex-wrap gap-3 w-full md:w-auto">
+             {/* Edit / Save Buttons */}
+             {isEditing ? (
+                <>
+                    <button
+                        onClick={() => setIsEditing(false)}
+                        className="flex items-center justify-center gap-2 px-4 py-2.5 bg-white text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 shadow-sm transition-all font-medium text-xs md:text-sm"
+                        disabled={isSaving}
+                    >
+                        <X size={16} /> Cancel
+                    </button>
+                    <button
+                        onClick={handleSave}
+                        className="flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 shadow-md transition-all font-medium text-xs md:text-sm"
+                        disabled={isSaving}
+                    >
+                        {isSaving ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
+                        Save Changes
+                    </button>
+                </>
+            ) : (
+                <button
+                    onClick={() => setIsEditing(true)}
+                    className="flex items-center justify-center gap-2 px-4 py-2.5 bg-white text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-50 shadow-sm transition-all font-medium text-xs md:text-sm"
+                >
+                    <Edit size={16} /> Edit Document
+                </button>
+            )}
+
             <button 
                 onClick={handleDownloadWord}
                 className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-white text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-50 shadow-sm transition-all font-medium text-xs md:text-sm"
@@ -106,9 +218,18 @@ const ProjectResult = () => {
                 Department of {project.category === 'Business' ? 'Business Administration' : project.category === 'Academic' ? 'General Studies' : 'Personal Development'}
             </p>
             
-            <h1 className="text-3xl md:text-5xl font-bold text-gray-900 mb-6 leading-tight font-serif capitalize">
-                {project.title}
-            </h1>
+            {isEditing ? (
+                <input
+                    type="text"
+                    value={editTitle}
+                    onChange={(e) => setEditTitle(e.target.value)}
+                    className="w-full text-center text-3xl md:text-5xl font-bold text-gray-900 mb-6 leading-tight font-serif capitalize border-b-2 border-blue-300 focus:outline-none focus:border-blue-600 bg-gray-50 p-2 rounded"
+                />
+            ) : (
+                <h1 className="text-3xl md:text-5xl font-bold text-gray-900 mb-6 leading-tight font-serif capitalize">
+                    {project.title}
+                </h1>
+            )}
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm mt-8 border-t border-gray-200 pt-6">
                 <div className="text-center">
@@ -130,9 +251,17 @@ const ProjectResult = () => {
 
         {/* BODY */}
         <div className="prose prose-lg max-w-none">
-             <div className="whitespace-pre-wrap font-serif text-gray-900 leading-loose text-justify text-base md:text-lg">
-                {project.content}
-            </div>
+             {isEditing ? (
+                 <textarea
+                    value={editContent}
+                    onChange={(e) => setEditContent(e.target.value)}
+                    className="w-full min-h-[500px] whitespace-pre-wrap font-serif text-gray-900 leading-loose text-justify text-base md:text-lg border-2 border-blue-300 focus:outline-none focus:border-blue-600 bg-gray-50 p-4 rounded resize-y"
+                 />
+             ) : (
+                <div className="whitespace-pre-wrap font-serif text-gray-900 leading-loose text-justify text-base md:text-lg">
+                    {project.content}
+                </div>
+             )}
         </div>
 
         {/* FOOTER */}
