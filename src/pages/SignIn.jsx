@@ -1,16 +1,23 @@
-import React from 'react'
+import React, { useState } from 'react'
 import Doc2 from '../assets/Doc.gif'
-import { FcGoogle } from 'react-icons/fc';
-import { FaFacebook } from 'react-icons/fa';
+// import { FcGoogle } from 'react-icons/fc';
+// import { FaFacebook } from 'react-icons/fa';
 import { Link, useNavigate } from 'react-router-dom';
+import { Loader2 } from 'lucide-react';
 
 const SignIn = () => {
   const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = (e) => {
     e.preventDefault(); // Prevents page reload
-    // Navigation happens only if browser validation (required fields) passes
-    navigate('/active-projects');
+    setIsLoading(true);
+
+    // Simulate API call
+    setTimeout(() => {
+        setIsLoading(false);
+        navigate('/active-projects');
+    }, 1500);
   };
 
   return (
@@ -43,33 +50,6 @@ const SignIn = () => {
               Sign in to continue to Project Buddy AI
             </p>
 
-            {/* --- 🌟 SOCIAL SIGN-IN BUTTONS START HERE 🌟 --- */}
-            {/* <div className='space-y-4 mb-8'>
-              <button
-                type="button"
-                className='w-full flex items-center justify-center px-5 py-3 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-100 transition duration-300'
-              >
-                <FcGoogle className="w-5 h-5 mr-3" />
-                Sign in with Google
-              </button>
-
-              <button
-                type="button"
-                className='w-full flex items-center justify-center px-5 py-3 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition duration-300'
-              >
-                <FaFacebook className="w-5 h-5 mr-3 text-white" />
-                Sign in with Facebook
-              </button>
-            </div>
-
-            {/* Divider */}
-            {/* <div className="relative flex py-5 items-center">
-              <div className="flex-grow border-t border-gray-300"></div>
-              <span className="flex-shrink mx-4 text-gray-500">OR</span>
-              <div className="flex-grow border-t border-gray-300"></div>
-            </div>  */}
-
-            {/* --- FORM WITH VALIDATION --- */}
             <form className='space-y-6' onSubmit={handleSubmit}>
               <div>
                 <input
@@ -77,6 +57,7 @@ const SignIn = () => {
                   type='email'
                   placeholder='Email Address'
                   className='w-full px-5 py-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-500'
+                  disabled={isLoading}
                 />
               </div>
               <div>
@@ -85,14 +66,23 @@ const SignIn = () => {
                   type='password'
                   placeholder='Password'
                   className='w-full px-5 py-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-500'
+                  disabled={isLoading}
                 />
               </div>
               
               <button
                 type='submit'
-                className='w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition duration-300 ease-in-out font-semibold text-lg'
+                disabled={isLoading}
+                className={`w-full flex items-center justify-center bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition duration-300 ease-in-out font-semibold text-lg ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
               >
-                Sign In
+                {isLoading ? (
+                    <>
+                        <Loader2 className="animate-spin mr-2" size={20} />
+                        Signing In...
+                    </>
+                ) : (
+                    "Sign In"
+                )}
               </button>
 
               <p className='mt-4 text-sm text-gray-500'>
