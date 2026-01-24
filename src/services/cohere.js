@@ -52,3 +52,61 @@ export const generateWithCohere = async (title, description) => {
     throw err;
   }
 };
+
+export const chatWithCohere = async (currentDocContent, chatHistory, userMessage) => {
+  const url = 'https://api.cohere.ai/v1/chat';
+
+  // Map our internal chat history to Cohere's format
+  const formattedHistory = chatHistory.map(msg => ({
+    role: msg.role === 'user' ? 'USER' : 'CHATBOT',
+    message: msg.message
+  }));
+
+  const preamble = `
+You are a helpful academic writing assistant.
+You are currently helping a student with a document.
+The current content of the document is provided below.
+Use this content to answer the user's questions or help them rewrite sections.
+Do not use Markdown formatting in your responses unless explicitly asked.
+Keep responses concise and helpful.
+
+DOCUMENT CONTENT:
+"""
+${currentDocContent || "(No content yet)"}
+"""
+  `;
+
+  try {
+    if (!COHERE_API_KEY) {
+        throw new Error('Cohere API Key is missing. Please check your .env file.');
+    }
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${COHERE_API_KEY}`,
+        'Content-Type': 'application/json',
+        'X-Client-Name': 'ReactApp'
+      },
+      body: JSON.stringify({
+        message: userMessage,
+        chat_history: formattedHistory,
+        preamble: preamble,
+        model: "command-r-08-2024",
+        temperature: 0.3
+      })
+    });
+
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({}));
+      throw new Error(errData.message || `Cohere API Error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.text;
+
+  } catch (err) {
+    console.error("Cohere Chat Error:", err);
+    throw err;
+  }
+};
