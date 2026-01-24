@@ -3,7 +3,7 @@ import { useLocation, Link, Navigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Printer, FileText, BookOpen, Edit, Save, X, Loader2, MessageCircle, Send, Minus } from 'lucide-react';
 import { db } from '../services/firebase';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
-import { chatWithCohere } from '../services/cohere';
+import { streamChatWithCohere } from '../services/cohere';
 
 const ProjectResult = () => {
   const location = useLocation();
@@ -107,35 +107,59 @@ const ProjectResult = () => {
     if (!chatInput.trim() || !project) return;
 
     const userMsg = { role: 'user', message: chatInput };
-    // Optimistic update
-    const newHistory = [...chatHistory, userMsg];
-    setChatHistory(newHistory);
     setChatInput('');
     setIsChatLoading(true);
 
     try {
+        // Optimistic update for user message
+        let currentHistory = [...chatHistory, userMsg];
+        setChatHistory(currentHistory);
+
+        // Add placeholder for AI response
+        const aiPlaceholder = { role: 'model', message: '' };
+        setChatHistory(prev => [...prev, aiPlaceholder]);
+
         // Use current content (edited or saved) as context
         const currentContent = isEditing ? editContent : project.content;
 
-        // Pass current history (excluding the new message) to API
-        const response = await chatWithCohere(currentContent, chatHistory, userMsg.message);
+        let fullResponse = '';
 
-        const aiMsg = { role: 'model', message: response };
-        const updatedHistory = [...newHistory, aiMsg];
+        // Pass chat history EXCLUDING the latest user message to avoid duplication in Cohere context
+        // (Cohere's chat_history parameter should contain previous turns)
+        await streamChatWithCohere(currentContent, chatHistory, userMsg.message, (chunk) => {
+            fullResponse += chunk;
+            setChatHistory(prev => {
+                const newHistory = [...prev];
+                // Update the last message (the AI placeholder)
+                newHistory[newHistory.length - 1] = {
+                    ...newHistory[newHistory.length - 1],
+                    message: fullResponse
+                };
+                return newHistory;
+            });
+        });
 
-        setChatHistory(updatedHistory);
+        // Final update to persistence
+        const finalHistory = [...currentHistory, { role: 'model', message: fullResponse }];
+        setChatHistory(finalHistory);
 
-        // Persist chat history silently
         if (project.id) {
             const docRef = doc(db, 'projects', project.id);
             await updateDoc(docRef, {
-                chatHistory: updatedHistory
+                chatHistory: finalHistory
             });
         }
 
     } catch (error) {
         console.error("Chat error:", error);
-        setChatHistory(prev => [...prev, { role: 'model', message: "Sorry, I encountered an error. Please try again." }]);
+        setChatHistory(prev => {
+             // Remove the empty placeholder if it failed immediately, or append error
+             const newHistory = [...prev];
+             if (newHistory.length > 0 && newHistory[newHistory.length-1].role === 'model' && newHistory[newHistory.length-1].message === '') {
+                 newHistory.pop();
+             }
+             return [...newHistory, { role: 'model', message: "Sorry, I encountered an error. Please try again." }];
+        });
     } finally {
         setIsChatLoading(false);
     }
@@ -375,16 +399,14 @@ const ProjectResult = () => {
                             : 'bg-white border border-gray-200 text-gray-800 rounded-bl-none shadow-sm'
                         }`}>
                             {msg.message}
+                            {/* Cursor for streaming message (if it's the last one and loading) */}
+                            {isChatLoading && idx === chatHistory.length - 1 && msg.role === 'model' && (
+                                <span className="inline-block w-1.5 h-3 ml-1 bg-gray-500 animate-pulse align-middle"></span>
+                            )}
                         </div>
                     </div>
                 ))}
-                {isChatLoading && (
-                    <div className="flex justify-start">
-                        <div className="bg-white border border-gray-200 p-3 rounded-lg rounded-bl-none shadow-sm">
-                            <Loader2 className="animate-spin text-blue-600" size={16} />
-                        </div>
-                    </div>
-                )}
+
                 <div ref={chatEndRef} />
             </div>
 

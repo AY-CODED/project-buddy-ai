@@ -53,7 +53,15 @@ export const generateWithCohere = async (title, description) => {
   }
 };
 
-export const chatWithCohere = async (currentDocContent, chatHistory, userMessage) => {
+/**
+ * Streams the chat response from Cohere.
+ * @param {string} currentDocContent - The context from the document.
+ * @param {Array} chatHistory - Array of previous messages.
+ * @param {string} userMessage - The new user message.
+ * @param {function} onChunk - Callback function called with each new text chunk.
+ * @returns {Promise<string>} - The full generated text.
+ */
+export const streamChatWithCohere = async (currentDocContent, chatHistory, userMessage, onChunk) => {
   const url = 'https://api.cohere.ai/v1/chat';
 
   // Map our internal chat history to Cohere's format
@@ -92,8 +100,9 @@ ${currentDocContent || "(No content yet)"}
         message: userMessage,
         chat_history: formattedHistory,
         preamble: preamble,
-        model: "command-r-08-2024",
-        temperature: 0.3
+        model: "command-r-plus", // Upgraded model for better quality
+        temperature: 0.3,
+        stream: true
       })
     });
 
@@ -102,11 +111,45 @@ ${currentDocContent || "(No content yet)"}
       throw new Error(errData.message || `Cohere API Error: ${response.status}`);
     }
 
-    const data = await response.json();
-    return data.text;
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let fullText = '';
+
+    while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        // Cohere stream sends multiple JSON objects separated by newlines
+        const lines = chunk.split('\n');
+
+        for (const line of lines) {
+            if (!line.trim()) continue;
+            try {
+                const event = JSON.parse(line);
+                if (event.event_type === 'text-generation') {
+                    const textChunk = event.text;
+                    fullText += textChunk;
+                    if (onChunk) {
+                        onChunk(textChunk);
+                    }
+                }
+            } catch (e) {
+                console.warn("Error parsing stream chunk:", e);
+            }
+        }
+    }
+
+    return fullText;
 
   } catch (err) {
-    console.error("Cohere Chat Error:", err);
+    console.error("Cohere Chat Stream Error:", err);
     throw err;
   }
+};
+
+// Deprecated: kept for backward compatibility if needed, but project now uses stream.
+export const chatWithCohere = async (currentDocContent, chatHistory, userMessage) => {
+    // Fallback to streaming function but just wait for result
+    return streamChatWithCohere(currentDocContent, chatHistory, userMessage, () => {});
 };
