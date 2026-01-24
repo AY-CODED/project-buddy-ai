@@ -96,24 +96,8 @@ const ActiveProjects = () => {
               </div>
             </div>
 
-            {/* Card Footer / Progress */}
+            {/* Card Footer */}
             <div>
-              <div className="flex justify-between items-center text-sm mb-2">
-                <span className="font-medium text-gray-700">Progress</span>
-                <span className={`${project.progress === 100 ? 'text-green-600' : 'text-blue-600'} font-bold`}>
-                  {project.progress}%
-                </span>
-              </div>
-              
-              <div className="w-full bg-gray-100 rounded-full h-2 mb-6 overflow-hidden">
-                <div 
-                  className={`h-full rounded-full transition-all duration-500 ${
-                    project.progress === 100 ? 'bg-green-500' : 'bg-blue-600'
-                  }`}
-                  style={{ width: `${project.progress}%` }}
-                ></div>
-              </div>
-
               <div className="flex items-center justify-between pt-4 border-t border-gray-50">
                 <div className="flex items-center text-xs text-gray-400">
                   <Clock size={14} className="mr-1" />

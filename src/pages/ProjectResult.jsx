@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, Link, Navigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Printer, FileText, BookOpen, Edit, Save, X, Loader2 } from 'lucide-react';
+import { ArrowLeft, Printer, FileText, BookOpen, Edit, Save, X, Loader2, MessageCircle, Send, Minus } from 'lucide-react';
 import { db } from '../services/firebase';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { streamChatWithCohere } from '../services/cohere';
 
 const ProjectResult = () => {
   const location = useLocation();
@@ -17,6 +18,13 @@ const ProjectResult = () => {
   // Edit state
   const [editTitle, setEditTitle] = useState('');
   const [editContent, setEditContent] = useState('');
+
+  // Chat state
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [chatHistory, setChatHistory] = useState([]);
+  const [chatInput, setChatInput] = useState('');
+  const [isChatLoading, setIsChatLoading] = useState(false);
+  const chatEndRef = useRef(null);
 
   useEffect(() => {
     // If we have an ID but no project data, fetch it.
@@ -42,13 +50,32 @@ const ProjectResult = () => {
     }
   }, [id, project]);
 
-  // Sync edit state when project is loaded or edit mode toggled
+  // Sync edit state and chat history when project is loaded
   useEffect(() => {
       if (project) {
           setEditTitle(project.title);
           setEditContent(project.content);
+          if (project.chatHistory) {
+              setChatHistory(project.chatHistory);
+          }
       }
-  }, [project, isEditing]);
+  }, [project]); // Keep this simple, separate edit mode toggle sync if needed
+
+  // Sync content when entering edit mode, if distinct from above
+  useEffect(() => {
+    if (isEditing && project) {
+       setEditContent(project.content);
+       setEditTitle(project.title);
+    }
+  }, [isEditing]);
+
+  // Auto-scroll chat
+  useEffect(() => {
+      if (isChatOpen && chatEndRef.current) {
+          chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
+      }
+  }, [chatHistory, isChatOpen]);
+
 
   const handleSave = async () => {
       if (!project || !project.id) return;
@@ -74,6 +101,68 @@ const ProjectResult = () => {
       } finally {
           setIsSaving(false);
       }
+  };
+
+  const handleSendChat = async () => {
+    if (!chatInput.trim() || !project) return;
+
+    const userMsg = { role: 'user', message: chatInput };
+    setChatInput('');
+    setIsChatLoading(true);
+
+    try {
+        // Optimistic update for user message
+        let currentHistory = [...chatHistory, userMsg];
+        setChatHistory(currentHistory);
+
+        // Add placeholder for AI response
+        const aiPlaceholder = { role: 'model', message: '' };
+        setChatHistory(prev => [...prev, aiPlaceholder]);
+
+        // Use current content (edited or saved) as context
+        const currentContent = isEditing ? editContent : project.content;
+
+        let fullResponse = '';
+
+        // Pass chat history EXCLUDING the latest user message to avoid duplication in Cohere context
+        // (Cohere's chat_history parameter should contain previous turns)
+        await streamChatWithCohere(currentContent, chatHistory, userMsg.message, (chunk) => {
+            fullResponse += chunk;
+            setChatHistory(prev => {
+                const newHistory = [...prev];
+                // Update the last message (the AI placeholder)
+                newHistory[newHistory.length - 1] = {
+                    ...newHistory[newHistory.length - 1],
+                    message: fullResponse
+                };
+                return newHistory;
+            });
+        });
+
+        // Final update to persistence
+        const finalHistory = [...currentHistory, { role: 'model', message: fullResponse }];
+        setChatHistory(finalHistory);
+
+        if (project.id) {
+            const docRef = doc(db, 'projects', project.id);
+            await updateDoc(docRef, {
+                chatHistory: finalHistory
+            });
+        }
+
+    } catch (error) {
+        console.error("Chat error:", error);
+        setChatHistory(prev => {
+             // Remove the empty placeholder if it failed immediately, or append error
+             const newHistory = [...prev];
+             if (newHistory.length > 0 && newHistory[newHistory.length-1].role === 'model' && newHistory[newHistory.length-1].message === '') {
+                 newHistory.pop();
+             }
+             return [...newHistory, { role: 'model', message: "Sorry, I encountered an error. Please try again." }];
+        });
+    } finally {
+        setIsChatLoading(false);
+    }
   };
 
   const handleDownloadWord = () => {
@@ -274,6 +363,73 @@ const ProjectResult = () => {
         </div>
 
       </div>
+
+      {/* --- CHAT INTERFACE --- */}
+      {/* Toggle Button */}
+      <button
+        onClick={() => setIsChatOpen(!isChatOpen)}
+        className="fixed bottom-6 right-6 p-4 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-all z-50 print:hidden"
+      >
+        {isChatOpen ? <X size={24} /> : <MessageCircle size={24} />}
+      </button>
+
+      {/* Chat Window */}
+      {isChatOpen && (
+        <div className="fixed bottom-24 right-6 w-80 md:w-96 h-[500px] bg-white rounded-xl shadow-2xl border border-gray-200 flex flex-col z-50 print:hidden overflow-hidden">
+            {/* Header */}
+            <div className="p-4 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
+                <h3 className="font-semibold text-gray-800">Project Assistant</h3>
+                <button onClick={() => setIsChatOpen(false)} className="text-gray-400 hover:text-gray-600">
+                    <Minus size={20} />
+                </button>
+            </div>
+
+            {/* Messages */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+                {chatHistory.length === 0 && (
+                    <div className="text-center text-gray-400 text-sm mt-10">
+                        Ask me anything about your project!
+                    </div>
+                )}
+                {chatHistory.map((msg, idx) => (
+                    <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                        <div className={`max-w-[85%] p-3 rounded-lg text-sm whitespace-pre-wrap ${
+                            msg.role === 'user'
+                            ? 'bg-blue-600 text-white rounded-br-none'
+                            : 'bg-white border border-gray-200 text-gray-800 rounded-bl-none shadow-sm'
+                        }`}>
+                            {msg.message}
+                            {/* Cursor for streaming message (if it's the last one and loading) */}
+                            {isChatLoading && idx === chatHistory.length - 1 && msg.role === 'model' && (
+                                <span className="inline-block w-1.5 h-3 ml-1 bg-gray-500 animate-pulse align-middle"></span>
+                            )}
+                        </div>
+                    </div>
+                ))}
+
+                <div ref={chatEndRef} />
+            </div>
+
+            {/* Input */}
+            <div className="p-3 bg-white border-t border-gray-200 flex gap-2">
+                <input
+                    type="text"
+                    value={chatInput}
+                    onChange={(e) => setChatInput(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendChat()}
+                    placeholder="Type a message..."
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-sm"
+                />
+                <button
+                    onClick={handleSendChat}
+                    disabled={isChatLoading || !chatInput.trim()}
+                    className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                    <Send size={18} />
+                </button>
+            </div>
+        </div>
+      )}
     </div>
   );
 };
